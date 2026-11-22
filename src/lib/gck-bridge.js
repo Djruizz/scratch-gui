@@ -45,7 +45,9 @@ const postToParent = (message, transfer = []) => {
     origins.forEach(origin => {
         if (origin !== window.location.origin) {
             try {
-                window.parent.postMessage(message, origin, transfer);
+                // Never pass transferables when broadcasting across multiple candidate origins,
+                // as the first postMessage would detach the ArrayBuffer.
+                window.parent.postMessage(message, origin);
             } catch (e) {
                 // Ignore origins that do not match the actual embedding parent.
             }
@@ -54,7 +56,11 @@ const postToParent = (message, transfer = []) => {
 };
 
 const base64ToUint8Array = rawBase64 => {
-    const cleanBase64 = rawBase64.includes(',') ? rawBase64.split(',')[1] : rawBase64;
+    const stripped = rawBase64.includes(',') ? rawBase64.split(',')[1] : rawBase64;
+    const cleanBase64 = stripped
+        .replace(/\s+/g, '')
+        .replace(/-/g, '+')
+        .replace(/_/g, '/');
     const binary = atob(cleanBase64);
     const bytes = new Uint8Array(binary.length);
     for (let i = 0; i < binary.length; i++) {
