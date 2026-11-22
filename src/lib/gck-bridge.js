@@ -202,6 +202,16 @@ const handleBridgeCommand = async (type, payload) => {
     case 'GCK_STOP_ALL':
         activeVm.stopAll();
         return {stopped: true};
+    case 'GCK_KEY_INPUT': {
+        if (!payload || typeof payload.key !== 'string') {
+            throw new Error('Se requiere la tecla para simular entrada táctil.');
+        }
+        activeVm.postIOData('keyboard', {
+            key: payload.key,
+            isDown: Boolean(payload.isDown)
+        });
+        return {ok: true};
+    }
     default:
         throw new Error(`Comando de puente no soportado: ${type}`);
     }
