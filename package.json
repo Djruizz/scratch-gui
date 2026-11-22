@@ -11,7 +11,8 @@
   },
   "main": "./dist/scratch-gui.js",
   "scripts": {
-    "build": "npm run clean && webpack --colors --bail",
+    "build": "npm run prepublish && npm run clean && webpack --colors --bail",
+    "copy-to-app": "node -e \"const fs=require('fs');fs.rmSync('../gamecodekids/public/editor',{recursive:true,force:true});fs.cpSync('build','../gamecodekids/public/editor',{recursive:true});\"",
     "clean": "rimraf ./build && mkdirp build && rimraf ./dist && mkdirp dist",
     "deploy": "touch build/.nojekyll && gh-pages -t -d build -m \"[skip ci] Build for $(git log --pretty=format:%H -n1)\"",
     "prepublish": "node scripts/prepublish.mjs",
@@ -50,6 +51,7 @@
     "css-loader": "^1.0.0",
     "dapjs": "2.3.0",
     "es6-object-assign": "1.1.0",
+    "gamecodekids": "file:../gamecodekids",
     "get-float-time-domain-data": "0.1.0",
     "get-user-media-promise": "1.1.4",
     "intl": "1.2.5",

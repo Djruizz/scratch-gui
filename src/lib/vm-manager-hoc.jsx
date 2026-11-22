@@ -13,6 +13,7 @@ import {
     onLoadedProject,
     projectError
 } from '../reducers/project-state';
+import {initGckBridge} from './gck-bridge';
 import log from './log';
 
 /**
@@ -51,6 +52,7 @@ const vmManagerHOC = function (WrappedComponent) {
                 }
                 this.props.vm.initialized = true;
                 this.props.vm.setLocale(this.props.locale, this.props.messages);
+                initGckBridge(this.props.vm);
             }
             if (!this.props.isPlayerOnly && !this.props.isStarted) {
                 this.props.vm.start();

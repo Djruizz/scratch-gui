@@ -54,6 +54,7 @@ const base = {
     },
     output: {
         library: 'GUI',
+        hashFunction: 'sha256',
         filename: (
             process.env.NODE_ENV === 'production' ? `js/${CACHE_EPOCH}/[name].[contenthash].js` : 'js/[name].js'
         ),
@@ -184,7 +185,10 @@ module.exports = [
                 'process.env.ENABLE_SERVICE_WORKER': JSON.stringify(process.env.ENABLE_SERVICE_WORKER || ''),
                 'process.env.ROOT': JSON.stringify(root),
                 'process.env.ROUTING_STYLE': JSON.stringify(process.env.ROUTING_STYLE || 'filehash'),
-                'process.env.ENABLE_WINDCHIMES': JSON.stringify(process.env.ENABLE_WINDCHIMES || '')
+                'process.env.ENABLE_WINDCHIMES': JSON.stringify(process.env.ENABLE_WINDCHIMES || ''),
+                'process.env.GCK_ALLOWED_ORIGINS': JSON.stringify(
+                    process.env.GCK_ALLOWED_ORIGINS || 'http://localhost:3000,http://127.0.0.1:3000'
+                )
             }),
             new HtmlWebpackPlugin({
                 chunks: ['editor'],

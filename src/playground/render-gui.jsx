@@ -7,12 +7,13 @@ const cloudHost = searchParams.get('cloud_host') || 'wss://clouddata.turbowarp.o
 const RenderGUI = props => (
     <GUI
         cloudHost={cloudHost}
-        canUseCloud
-        hasCloudPermission
+        canUseCloud={false}
+        hasCloudPermission={false}
+        canChangeLanguage={false}
         canSave={false}
         basePath={process.env.ROOT}
-        canEditTitle
-        enableCommunity
+        canEditTitle={false}
+        enableCommunity={false}
         {...props}
     />
 );

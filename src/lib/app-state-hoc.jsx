@@ -33,7 +33,7 @@ const AppStateHOC = function (WrappedComponent, localesOnly) {
 
             let initializedLocales = localesInitialState;
             const locale = detectLocale(Object.keys(locales));
-            if (locale !== 'en') {
+            if (locale !== initializedLocales.locale) {
                 initializedLocales = initLocale(initializedLocales, locale);
             }
             if (localesOnly) {

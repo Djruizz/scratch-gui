@@ -4,7 +4,7 @@ import {localeData, isRtl} from '@turbowarp/scratch-l10n';
 import editorMessages from '@turbowarp/scratch-l10n/locales/editor-msgs';
 import addAdditionalTranslations from '../lib/tw-translations/index.js';
 
-import {LANGUAGE_KEY} from '../lib/detect-locale.js';
+import {FORCED_LOCALE, LANGUAGE_KEY} from '../lib/detect-locale.js';
 
 addAdditionalTranslations(editorMessages);
 addLocaleData(localeData);
@@ -12,11 +12,15 @@ addLocaleData(localeData);
 const UPDATE_LOCALES = 'scratch-gui/locales/UPDATE_LOCALES';
 const SELECT_LOCALE = 'scratch-gui/locales/SELECT_LOCALE';
 
+const DEFAULT_LOCALE = Object.prototype.hasOwnProperty.call(editorMessages, FORCED_LOCALE) ?
+    FORCED_LOCALE :
+    'en';
+
 const initialState = {
     isRtl: false,
-    locale: 'en',
+    locale: DEFAULT_LOCALE,
     messagesByLocale: editorMessages,
-    messages: editorMessages.en
+    messages: editorMessages[DEFAULT_LOCALE]
 };
 
 const reducer = function (state, action) {

@@ -40,20 +40,9 @@ import TWWindchimeSubmitter from '../containers/tw-windchime-submitter.jsx';
 import {isBrowserSupported} from '../lib/tw-environment-support-prober';
 import AddonChannels from '../addons/channels';
 import {loadServiceWorker} from './load-service-worker';
-import runAddons from '../addons/entry';
-import InvalidEmbed from '../components/tw-invalid-embed/invalid-embed.jsx';
 import {APP_NAME} from '../lib/brand.js';
 
 import styles from './interface.css';
-
-const isInvalidEmbed = window.parent !== window;
-
-const handleClickAddonSettings = addonId => {
-    // addonId might be a string of the addon to focus on, undefined, or an event (treat like undefined)
-    const path = process.env.ROUTING_STYLE === 'wildcard' ? 'addons' : 'addons.html';
-    const url = `${process.env.ROOT}${path}${typeof addonId === 'string' ? `#${addonId}` : ''}`;
-    window.open(url);
-};
 
 const messages = defineMessages({
     defaultTitle: {
@@ -79,8 +68,6 @@ if (AddonChannels.changeChannel) {
         SettingsStore.setStoreWithVersionCheck(e.data);
     });
 }
-
-runAddons();
 
 const Footer = () => (
     <footer className={styles.footer}>
@@ -204,10 +191,6 @@ class Interface extends React.Component {
         }
     }
     render () {
-        if (isInvalidEmbed) {
-            return <InvalidEmbed />;
-        }
-
         const {
             /* eslint-disable no-unused-vars */
             intl,
@@ -235,11 +218,10 @@ class Interface extends React.Component {
                 {isHomepage ? (
                     <div className={styles.menu}>
                         <WrappedMenuBar
-                            canChangeLanguage
-                            canManageFiles
+                            canChangeLanguage={false}
+                            canManageFiles={false}
                             canChangeTheme
                             enableSeeInside
-                            onClickAddonSettings={handleClickAddonSettings}
                         />
                     </div>
                 ) : null}
@@ -251,7 +233,6 @@ class Interface extends React.Component {
                     }) : null}
                 >
                     <GUI
-                        onClickAddonSettings={handleClickAddonSettings}
                         onUpdateProjectTitle={this.handleUpdateProjectTitle}
                         backpackVisible
                         backpackHost="_local_"

@@ -54,9 +54,8 @@ const ProjectSaverHOC = function (WrappedComponent) {
             ]);
         }
         componentWillMount () {
-            if (typeof window === 'object') {
-                // Note: it might be better to use a listener instead of assigning onbeforeunload;
-                // but then it'd be hard to turn this listening off in our tests
+            if (typeof window === 'object' && window.parent === window) {
+                // Only warn before leaving when opened standalone outside the GameCodeKids iframe.
                 window.onbeforeunload = e => this.leavePageConfirm(e);
             }
 

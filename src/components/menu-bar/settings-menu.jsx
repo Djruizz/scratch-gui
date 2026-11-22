@@ -2,7 +2,6 @@ import PropTypes from 'prop-types';
 import React from 'react';
 import {FormattedMessage} from 'react-intl';
 
-import LanguageMenu from './language-menu.jsx';
 import MenuBarMenu from './menu-bar-menu.jsx';
 import {MenuSection} from '../menu/menu.jsx';
 import MenuLabel from './tw-menu-label.jsx';
@@ -18,11 +17,9 @@ import dropdownCaret from './dropdown-caret.svg';
 import settingsIcon from './icon--settings.svg';
 
 const SettingsMenu = ({
-    canChangeLanguage,
     canChangeTheme,
     isRtl,
     onClickDesktopSettings,
-    onOpenCustomSettings,
     onRequestClose,
     onRequestOpen,
     settingsMenuOpen
@@ -57,13 +54,10 @@ const SettingsMenu = ({
             place={isRtl ? 'left' : 'right'}
         >
             <MenuSection>
-                {canChangeLanguage && <LanguageMenu onRequestCloseSettings={onRequestClose} />}
                 {canChangeTheme && (
                     <React.Fragment>
                         <TWGuiThemeMenu />
-                        <TWBlocksThemeMenu
-                            onOpenCustomSettings={onOpenCustomSettings}
-                        />
+                        <TWBlocksThemeMenu />
                         <TWAccentThemeMenu />
                     </React.Fragment>
                 )}
@@ -74,11 +68,9 @@ const SettingsMenu = ({
 );
 
 SettingsMenu.propTypes = {
-    canChangeLanguage: PropTypes.bool,
     canChangeTheme: PropTypes.bool,
     isRtl: PropTypes.bool,
     onClickDesktopSettings: PropTypes.func,
-    onOpenCustomSettings: PropTypes.func,
     onRequestClose: PropTypes.func,
     onRequestOpen: PropTypes.func,
     settingsMenuOpen: PropTypes.bool
