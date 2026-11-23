@@ -13,7 +13,11 @@ import {
     onLoadedProject,
     projectError
 } from '../reducers/project-state';
-import {initGckBridge} from './gck-bridge';
+import {
+    hasGckExternalProjectLoaded,
+    initGckBridge,
+    notifyGckInitialProjectLoaded
+} from './gck-bridge';
 import log from './log';
 
 /**
@@ -71,11 +75,17 @@ const vmManagerHOC = function (WrappedComponent) {
             }
         }
         loadProject () {
+            if (hasGckExternalProjectLoaded()) {
+                this.props.onLoadedProject(this.props.loadingState, this.props.canSave);
+                notifyGckInitialProjectLoaded(this.props.vm);
+                return Promise.resolve();
+            }
             // tw: stop when loading new project
             this.props.vm.quit();
             return this.props.vm.loadProject(this.props.projectData)
                 .then(() => {
                     this.props.onLoadedProject(this.props.loadingState, this.props.canSave);
+                    notifyGckInitialProjectLoaded(this.props.vm);
                     // Wrap in a setTimeout because skin loading in
                     // the renderer can be async.
                     setTimeout(() => this.props.onSetProjectUnchanged());

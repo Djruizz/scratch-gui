@@ -8,7 +8,18 @@ let activeVm = null;
 let verifiedParentOrigin = null;
 let bridgeInitialized = false;
 let projectChangedTimer = null;
+let initialProjectReady = false;
+let externalProjectLoaded = false;
+let isLoadingExternalProject = false;
+let ignoreChangesUntil = 0;
 const subscribedVms = new WeakSet();
+
+const clearPendingProjectChanged = () => {
+    if (projectChangedTimer) {
+        clearTimeout(projectChangedTimer);
+        projectChangedTimer = null;
+    }
+};
 
 const getAllowedOrigins = () => {
     const raw = process.env.GCK_ALLOWED_ORIGINS || DEFAULT_ALLOWED_ORIGINS;
@@ -134,6 +145,37 @@ const addCostumeFromPayload = (vm, payload) => new Promise((resolve, reject) => 
     );
 });
 
+const addBackdropFromPayload = (vm, payload) => new Promise((resolve, reject) => {
+    if (!payload || typeof payload.dataBase64 !== 'string') {
+        reject(new Error('Los datos del fondo son obligatorios.'));
+        return;
+    }
+
+    const bytes = base64ToUint8Array(payload.dataBase64);
+    const mimeType = mimeFromDataFormat(payload.dataFormat);
+    const backdropName = typeof payload.name === 'string' && payload.name.trim() ?
+        payload.name.trim() :
+        'Fondo';
+
+    costumeUpload(
+        bytes.buffer,
+        mimeType,
+        vm,
+        async vmCostumes => {
+            try {
+                for (const costume of vmCostumes) {
+                    costume.name = backdropName;
+                    await vm.addBackdrop(costume.md5, costume);
+                }
+                resolve({added: true, count: vmCostumes.length});
+            } catch (err) {
+                reject(err);
+            }
+        },
+        err => reject(new Error(typeof err === 'string' ? err : 'No fue posible agregar el fondo.'))
+    );
+});
+
 const addSpriteFromPayload = (vm, payload) => new Promise((resolve, reject) => {
     if (!payload || typeof payload.dataBase64 !== 'string') {
         reject(new Error('Los datos del personaje son obligatorios.'));
@@ -171,16 +213,26 @@ const handleBridgeCommand = async (type, payload) => {
     switch (type) {
     case 'GCK_PING':
         return {
-            ready: Boolean(activeVm.initialized),
+            ready: Boolean(activeVm.initialized && initialProjectReady),
             locale: 'es-419'
         };
     case 'GCK_LOAD_PROJECT': {
         if (!payload || !payload.buffer) {
             throw new Error('Se requiere el buffer del archivo .sb3.');
         }
-        await activeVm.loadProject(payload.buffer);
-        if (activeVm.renderer && typeof activeVm.renderer.draw === 'function') {
-            activeVm.renderer.draw();
+        externalProjectLoaded = true;
+        isLoadingExternalProject = true;
+        clearPendingProjectChanged();
+        try {
+            activeVm.quit();
+            await activeVm.loadProject(payload.buffer);
+            if (activeVm.renderer && typeof activeVm.renderer.draw === 'function') {
+                activeVm.renderer.draw();
+            }
+        } finally {
+            isLoadingExternalProject = false;
+            ignoreChangesUntil = Date.now() + 300;
+            clearPendingProjectChanged();
         }
         return {loaded: true};
     }
@@ -199,6 +251,8 @@ const handleBridgeCommand = async (type, payload) => {
     }
     case 'GCK_ADD_COSTUME':
         return addCostumeFromPayload(activeVm, payload);
+    case 'GCK_ADD_BACKDROP':
+        return addBackdropFromPayload(activeVm, payload);
     case 'GCK_ADD_SPRITE':
         return addSpriteFromPayload(activeVm, payload);
     case 'GCK_GREEN_FLAG':
@@ -287,15 +341,46 @@ const attachVmListeners = vm => {
     subscribedVms.add(vm);
 
     vm.on('PROJECT_CHANGED', () => {
-        if (projectChangedTimer) {
-            clearTimeout(projectChangedTimer);
+        if (!initialProjectReady || isLoadingExternalProject || Date.now() < ignoreChangesUntil) {
+            return;
         }
+        clearPendingProjectChanged();
         projectChangedTimer = setTimeout(() => {
+            projectChangedTimer = null;
+            if (!initialProjectReady || isLoadingExternalProject || Date.now() < ignoreChangesUntil) {
+                return;
+            }
             postToParent({
                 type: 'GCK_PROJECT_CHANGED',
                 timestamp: Date.now()
             });
         }, PROJECT_CHANGED_DEBOUNCE_MS);
+    });
+};
+
+/**
+ * Returns whether an external GameCodeKids `.sb3` project has already been loaded via bridge.
+ * @returns {boolean} True when GCK_LOAD_PROJECT has been invoked
+ */
+export const hasGckExternalProjectLoaded = () => externalProjectLoaded;
+
+/**
+ * Marks the initial Scratch VM project load as complete and emits GCK_EDITOR_READY to parent.
+ * @param {object} vm Scratch Virtual Machine instance
+ */
+export const notifyGckInitialProjectLoaded = vm => {
+    if (vm) {
+        activeVm = vm;
+        attachVmListeners(vm);
+    }
+    initialProjectReady = true;
+    ignoreChangesUntil = Date.now() + 250;
+    clearPendingProjectChanged();
+
+    postToParent({
+        type: 'GCK_EDITOR_READY',
+        locale: 'es-419',
+        timestamp: Date.now()
     });
 };
 
@@ -313,9 +398,11 @@ export const initGckBridge = vm => {
         window.addEventListener('message', handleWindowMessage);
     }
 
-    postToParent({
-        type: 'GCK_EDITOR_READY',
-        locale: 'es-419',
-        timestamp: Date.now()
-    });
+    if (initialProjectReady) {
+        postToParent({
+            type: 'GCK_EDITOR_READY',
+            locale: 'es-419',
+            timestamp: Date.now()
+        });
+    }
 };
